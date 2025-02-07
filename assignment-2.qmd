@@ -1,0 +1,181 @@
+---
+title: "Untitled"
+author: "Anous Ahmed"
+format: pdf
+editor: visual
+---
+
+#Question 1 - EDA
+
+##Dataset Export Quality Data for Passenger Cars, 1963-2014
+
+
+**Perform as many of the following tasks as you can. If you cannot perform a task, write a brief explanation of how you would perform it. The questions that are starred (\*) require only text responses.**
+
+**1. Load the dataset and display the first few rows.**
+
+```{r setup}
+library("tidyverse")
+library("stevedata")
+```
+
+```{r} 
+eq_passengercars = eq_passengercars
+```
+
+```{r}
+head(eq_passengercars, 10)
+```
+
+**2. Display the structure and summary of the dataset.**
+
+```{r}
+# check the structure
+str(eq_passengercars)
+```
+
+```{r}
+# check for rows and columns
+summary(eq_passengercars)
+```
+
+```{r}
+# check for rows and columns
+dim(eq_passengercars)
+```
+
+**3. Is the dataset tidy? If not, what makes it messy? If you were to make it tidy, what would be the "unit of observation" for each row?**
+
+The dataset is not tidy because the variables, **category** and **type** have multiple pieces of information that must be separated and inserted in different columns. The **category** column contains both a measurement type and and confidence interval descriptors. On the other hand, the **type** column contains information on numerical data, general categories and product types. Therefore, the dataset would need to be tidy in order to carry out further analysis. 
+
+The **unit of observation** for each row would be the measurement of a country's export for each year and product type in a particular sector. 
+
+**4. If you think the data is not tidy, tidy the dataset.**
+
+```{r}
+eq_passengercars_tidy = eq_passengercars %>%
+  separate(type, into = c("industry_sector", "product_type"), sep = ",", remove = T) %>%
+  separate(industry_sector, into = c("sector_code", "sector_name"), sep = "\\. ", remove = T) %>%
+  separate(category, into = c("measurement", "interval"), sep = " - ", fill = "right")
+```
+
+```{r}
+head(eq_passengercars_tidy, 5)
+```
+
+**5. Check for missing values and duplicates. If there are any, handle them appropriately.**
+
+```{r}
+missing_values = eq_passengercars_tidy %>%
+    summarise_all(~ sum(is.na(.)))
+
+print(missing_values)
+```
+
+```{r}
+# calculating the proportion of missing values
+missing_frac = eq_passengercars_tidy %>%
+    summarise_all(~ sum(is.na(.)) / n())
+
+print(missing_frac)
+```
+
+**6. Plot some of the variables in the dataset. What are some interesting trends you can see? (If plotting all countries is not possible, pick 6-8 countries of interest to you.)**
+
+```{r}
+selected_countries = c("Australia", "United States", "Japan", "United Kingdom", "Germany", "China")
+```
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+dist_graph = eq_passengercars_tidy %>%
+  filter(measurement == "Export Quality Index", country %in% selected_countries)
+
+ggplot(dist_graph, aes(x = year, y = value, color = country)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Export Quality Index Over Time",
+       x = "Year",
+       y = "Export Quality Index",
+       color = "Country") +
+  theme_minimal()
+```
+
+
+## Now, answer the following questions using the eq_passengercars dataset:
+
+**1. Which country has the highest "Trade value of exports"? Which year was this?**
+
+```{r}
+highest_trade_exports = eq_passengercars_tidy %>%
+# Filter the rows that correspond to "Trade value of exports"
+  filter(measurement == "Trade value of exports") %>%
+# filter the row where "value" is the maximum
+  filter(value == max(value, na.rm = TRUE)) %>%
+  select(country, year, value)
+```
+
+```{r}
+# Germany had the highest Trade value of exports in 2014 
+highest_trade_exports
+```
+
+**2. Which year had the lowest "Trade value of exports"? Which country was this?**
+
+```{r}
+lowest_trade_exports = eq_passengercars_tidy %>%
+# Filter the rows that correspond to "Trade value of exports"
+  filter(measurement == "Trade value of exports") %>%
+# filter the row where "value" is the maximum
+  filter(value == min(value, na.rm = TRUE)) %>%
+  select(country, year, value)
+```
+
+```{r}
+# South Africa had the highest Trade value of exports in 1964 
+highest_trade_exports
+```
+
+**3. Which year did your country/any country of your interest have the highest "Export Quality Index"?**
+
+```{r}
+highest_export_index = eq_passengercars_tidy %>%
+# Filter the rows that correspond to "Export Quality Index"
+  filter(measurement == "Export Quality Index") %>%
+# I'll be choosing the United States  
+  filter(country == "United States") %>%
+# filter the row where "value" is the maximum
+  filter(value == max(value, na.rm = TRUE)) %>%
+  select(country, year, value)
+```
+
+```{r}
+# The United States had the highest Export Quality Index in 1984 
+highest_export_index
+```
+
+**4. Which year, on average, had the greatest decrease in "Trade value of exports" from the previous year?**
+
+```{r}
+highest_trade_value = eq_passengercars_tidy %>%
+# Filter the rows that correspond to "Trade value of exports"
+  filter(measurement == "Trade value of exports") %>%
+# Calculate the average export value per year
+  group_by(year) %>%
+  summarise(avg_trade_exports = mean(value, na.rm = TRUE)) %>%
+# Ensure the data is ordered by year
+  arrange(year) %>%
+# Compute the drop from the previous year.
+# Here, we calculate how much lower the current year's average is compared to the previous year's average.
+  mutate(decrease = lag(avg_trade_exports) - avg_trade_exports) %>%
+# Step 5: Find the year with the greatest drop (i.e. the maximum decrease value)
+  filter(decrease == max(decrease, na.rm = TRUE)) %>%
+  select(year, decrease)
+```
+
+```{r}
+highest_trade_value
+```

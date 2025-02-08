@@ -88,7 +88,9 @@ selected_countries = c("Australia", "United States", "Japan", "United Kingdom", 
 ```{r}
 library(ggplot2)
 library(dplyr)
+```
 
+```{r}
 dist_graph = eq_passengercars_tidy %>%
   filter(measurement == "Export Quality Index", country %in% selected_countries)
 
@@ -230,3 +232,6 @@ country_year_export = eqi_comparison %>%
 country_year_export
 ```
 
+# Question 2 - Mapping
+
+For this question, I decided to use data for the **Employment Status for the Population 16 Years and Over** for 3 states in the U.S **(Illinois, Indiana, & Florida)**
